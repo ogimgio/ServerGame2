@@ -36,4 +36,13 @@ public class UserService {
         log.debug("Created Information for User: {}", newUser);
         return newUser;
     }
+
+    public User getUser(long id) {
+        return this.userRepository.findById(id);
+    }
+
+    public void deleteUser(long id) {
+        User user = this.userRepository.findById(id);
+        this.userRepository.delete(user);
+    }
 }
