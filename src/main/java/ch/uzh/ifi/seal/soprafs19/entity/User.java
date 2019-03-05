@@ -3,6 +3,8 @@ package ch.uzh.ifi.seal.soprafs19.entity;
 import ch.uzh.ifi.seal.soprafs19.constant.UserStatus;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,12 +26,21 @@ public class User implements Serializable {
 	
 	@Column(nullable = false, unique = true) 
 	private String username;
+
+	@Column(nullable = false)
+	private String password;
 	
 	@Column(nullable = false, unique = true) 
 	private String token;
 
 	@Column(nullable = false)
 	private UserStatus status;
+
+	@Column(nullable = false)
+	private String generationDate;
+
+	@Column(nullable = false)
+	private String lastSeenDate;
 
 	public Long getId() {
 		return id;
@@ -79,5 +90,33 @@ public class User implements Serializable {
 		}
 		User user = (User) o;
 		return this.getId().equals(user.getId());
+	}
+
+	public String getGenerationDate() {
+		return generationDate;
+	}
+
+	public void setGenerationDate(String generationDate) {
+		this.generationDate = generationDate;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public void setLastSeenDate(String lastSeenDate) {
+		this.lastSeenDate = lastSeenDate;
+	}
+
+	public String getLastSeenDate() {
+		return lastSeenDate;
+	}
+
+	public void seen() {
+		this.setLastSeenDate(LocalDateTime.now().toString());
 	}
 }

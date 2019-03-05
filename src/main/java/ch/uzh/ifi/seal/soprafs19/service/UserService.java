@@ -2,6 +2,8 @@ package ch.uzh.ifi.seal.soprafs19.service;
 
 import ch.uzh.ifi.seal.soprafs19.constant.UserStatus;
 import ch.uzh.ifi.seal.soprafs19.entity.User;
+import ch.uzh.ifi.seal.soprafs19.exceptions.LoginException;
+import ch.uzh.ifi.seal.soprafs19.exceptions.RegistrationException;
 import ch.uzh.ifi.seal.soprafs19.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -29,9 +32,17 @@ public class UserService {
         return this.userRepository.findAll();
     }
 
-    public User createUser(User newUser) {
+    public User createUser(User newUser) throws RegistrationException {
+        // Check new user for any errors
+        if(newUser.getPassword().length() < 4) {
+            throw new RegistrationException("Password must be at least four characters long");
+        } else if(userRepository.findByUsername(newUser.getUsername()) != null) {
+            throw new RegistrationException("Username already exists in database");
+        }
         newUser.setToken(UUID.randomUUID().toString());
         newUser.setStatus(UserStatus.ONLINE);
+        newUser.setGenerationDate(LocalDateTime.now().toString());
+        newUser.setLastSeenDate(LocalDateTime.now().toString());
         userRepository.save(newUser);
         log.debug("Created Information for User: {}", newUser);
         return newUser;
@@ -44,5 +55,23 @@ public class UserService {
     public void deleteUser(long id) {
         User user = this.userRepository.findById(id);
         this.userRepository.delete(user);
+    }
+
+    public User attemptLogin(User loginUser) throws LoginException {
+        User targetUser = this.userRepository.findByUsername(loginUser.getUsername());
+        if (targetUser != null) {
+            if (targetUser.getStatus() == UserStatus.ONLINE) {
+                return targetUser;
+            }
+            if (targetUser.getPassword() == loginUser.getPassword()) {
+                targetUser.setStatus(UserStatus.ONLINE);
+                targetUser.setLastSeenDate((LocalDateTime.now().toString()));
+                return targetUser;
+            } else {
+                throw new LoginException("Incorrect password", loginUser.getUsername());
+            }
+        } else {
+            throw new LoginException("User not found", loginUser.getUsername());
+        }
     }
 }

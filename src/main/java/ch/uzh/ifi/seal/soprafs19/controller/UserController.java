@@ -1,7 +1,7 @@
 package ch.uzh.ifi.seal.soprafs19.controller;
 
 import ch.uzh.ifi.seal.soprafs19.entity.User;
-import ch.uzh.ifi.seal.soprafs19.repository.UserRepository;
+import ch.uzh.ifi.seal.soprafs19.exceptions.RegistrationException;
 import ch.uzh.ifi.seal.soprafs19.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,8 +28,11 @@ public class UserController {
         return null;
     }
 
+    // Posting to /users means creating a new user
     @PostMapping("/users")
+    @ExceptionHandler({RegistrationException.class})
     User createUser(@RequestBody User newUser) {
         return this.service.createUser(newUser);
     }
+
 }
