@@ -8,6 +8,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import java.time.LocalDate;
 
 @Entity
 public class User implements Serializable {
@@ -30,6 +31,9 @@ public class User implements Serializable {
 
 	@Column(nullable = false)
 	private UserStatus status;
+
+	private String birthdayDate;
+	public LocalDate creationDate;
 
 	public Long getId() {
 		return id;

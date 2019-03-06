@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
@@ -28,12 +29,23 @@ public class UserService {
     public Iterable<User> getUsers() {
         return this.userRepository.findAll();
     }
+    public User getUser(String nameUser){ return this.userRepository.findByName(nameUser); }
 
     public User createUser(User newUser) {
+        newUser.creationDate =  LocalDate.now();
         newUser.setToken(UUID.randomUUID().toString());
         newUser.setStatus(UserStatus.ONLINE);
         userRepository.save(newUser);
         log.debug("Created Information for User: {}", newUser);
         return newUser;
+    }
+    public String checkCredentials(String username, String password, String name){
+        User searchingUser = userRepository.findByName(name);
+        if(name == searchingUser.getName()){
+            return "Access granted";
+        }
+        else{
+            return name;
+        }
     }
 }
