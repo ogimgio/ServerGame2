@@ -12,7 +12,7 @@ public class LoginException extends RuntimeException {
     public LoginException(String message,String username)
     {
         this.message = message;
-        this.username=username;
+        this.username = username;
     }
 
     @Override

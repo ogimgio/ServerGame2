@@ -1,6 +1,7 @@
 package ch.uzh.ifi.seal.soprafs19.controller;
 
 import ch.uzh.ifi.seal.soprafs19.entity.User;
+import ch.uzh.ifi.seal.soprafs19.exceptions.LoginException;
 import ch.uzh.ifi.seal.soprafs19.exceptions.RegistrationException;
 import ch.uzh.ifi.seal.soprafs19.service.UserService;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,14 @@ public class UserController {
     @ExceptionHandler({RegistrationException.class})
     User createUser(@RequestBody User newUser) {
         return this.service.createUser(newUser);
+    }
+
+
+    // Posting to /login means trying to login, duh
+    @PostMapping("/login")
+    @ExceptionHandler({LoginException.class})
+    User loginUser(@RequestBody User loginUser) {
+        return service.attemptLogin(loginUser);
     }
 
 }

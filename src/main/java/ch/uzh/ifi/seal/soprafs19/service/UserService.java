@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.Registration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -36,7 +37,14 @@ public class UserService {
         // Check new user for any errors
         if(newUser.getPassword().length() < 4) {
             throw new RegistrationException("Password must be at least four characters long");
-        } else if(userRepository.findByUsername(newUser.getUsername()) != null) {
+        }
+        else if(newUser.getUsername().length() == 0) {
+            throw new RegistrationException("Username must not be empty");
+        }
+        else if(newUser.getName().length() == 0) {
+            throw new RegistrationException("Name must not be empty");
+        }
+        else if(userRepository.findByUsername(newUser.getUsername()) != null) {
             throw new RegistrationException("Username already exists in database");
         }
         newUser.setToken(UUID.randomUUID().toString());
@@ -60,10 +68,7 @@ public class UserService {
     public User attemptLogin(User loginUser) throws LoginException {
         User targetUser = this.userRepository.findByUsername(loginUser.getUsername());
         if (targetUser != null) {
-            if (targetUser.getStatus() == UserStatus.ONLINE) {
-                return targetUser;
-            }
-            if (targetUser.getPassword() == loginUser.getPassword()) {
+            if (targetUser.getPassword().equals(loginUser.getPassword())) {
                 targetUser.setStatus(UserStatus.ONLINE);
                 targetUser.setLastSeenDate((LocalDateTime.now().toString()));
                 return targetUser;
