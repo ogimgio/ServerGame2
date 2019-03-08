@@ -1,15 +1,14 @@
 package ch.uzh.ifi.seal.soprafs19.entity;
 
 import ch.uzh.ifi.seal.soprafs19.constant.UserStatus;
-import org.apache.tomcat.jni.Local;
-
-import java.io.Serializable;
-import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 public class User implements Serializable {
@@ -37,10 +36,10 @@ public class User implements Serializable {
 	private UserStatus status;
 
 	@Column
-	private LocalDateTime birthday;
+	private LocalDate birthday;
 
 	@Column(nullable = false)
-	private LocalDateTime registrationDate;
+	private LocalDate registrationDate;
 
 	@Column(nullable = false)
 	private LocalDateTime lastSeenDate;
@@ -95,11 +94,11 @@ public class User implements Serializable {
 		return this.getId().equals(user.getId());
 	}
 
-	public LocalDateTime getRegistrationDate() {
+	public LocalDate getRegistrationDate() {
 		return registrationDate;
 	}
 
-	public void setRegistrationDate(LocalDateTime registrationDate) {
+	public void setRegistrationDate(LocalDate registrationDate) {
 		this.registrationDate = registrationDate;
 	}
 
@@ -123,11 +122,11 @@ public class User implements Serializable {
 		this.setLastSeenDate(LocalDateTime.now());
 	}
 
-	public LocalDateTime getBirthday() {
+	public LocalDate getBirthday() {
 		return birthday;
 	}
 
-	public void setBirthday(LocalDateTime birthday) {
+	public void setBirthday(LocalDate birthday) {
 		this.birthday = birthday;
 	}
 }
