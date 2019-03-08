@@ -1,10 +1,10 @@
 package ch.uzh.ifi.seal.soprafs19.entity;
 
 import ch.uzh.ifi.seal.soprafs19.constant.UserStatus;
+import org.apache.tomcat.jni.Local;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -36,11 +36,14 @@ public class User implements Serializable {
 	@Column(nullable = false)
 	private UserStatus status;
 
-	@Column(nullable = false)
-	private String generationDate;
+	@Column
+	private LocalDateTime birthday;
 
 	@Column(nullable = false)
-	private String lastSeenDate;
+	private LocalDateTime registrationDate;
+
+	@Column(nullable = false)
+	private LocalDateTime lastSeenDate;
 
 	public Long getId() {
 		return id;
@@ -92,12 +95,12 @@ public class User implements Serializable {
 		return this.getId().equals(user.getId());
 	}
 
-	public String getGenerationDate() {
-		return generationDate;
+	public LocalDateTime getRegistrationDate() {
+		return registrationDate;
 	}
 
-	public void setGenerationDate(String generationDate) {
-		this.generationDate = generationDate;
+	public void setRegistrationDate(LocalDateTime registrationDate) {
+		this.registrationDate = registrationDate;
 	}
 
 	public String getPassword() {
@@ -108,15 +111,23 @@ public class User implements Serializable {
 		this.password = password;
 	}
 
-	public void setLastSeenDate(String lastSeenDate) {
+	public void setLastSeenDate(LocalDateTime lastSeenDate) {
 		this.lastSeenDate = lastSeenDate;
 	}
 
-	public String getLastSeenDate() {
+	public LocalDateTime getLastSeenDate() {
 		return lastSeenDate;
 	}
 
 	public void seen() {
-		this.setLastSeenDate(LocalDateTime.now().toString());
+		this.setLastSeenDate(LocalDateTime.now());
+	}
+
+	public LocalDateTime getBirthday() {
+		return birthday;
+	}
+
+	public void setBirthday(LocalDateTime birthday) {
+		this.birthday = birthday;
 	}
 }

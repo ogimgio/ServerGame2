@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.Registration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -49,8 +48,8 @@ public class UserService {
         }
         newUser.setToken(UUID.randomUUID().toString());
         newUser.setStatus(UserStatus.ONLINE);
-        newUser.setGenerationDate(LocalDateTime.now().toString());
-        newUser.setLastSeenDate(LocalDateTime.now().toString());
+        newUser.setRegistrationDate(LocalDateTime.now());
+        newUser.setLastSeenDate(LocalDateTime.now());
         userRepository.save(newUser);
         log.debug("Created Information for User: {}", newUser);
         return newUser;
@@ -70,7 +69,7 @@ public class UserService {
         if (targetUser != null) {
             if (targetUser.getPassword().equals(loginUser.getPassword())) {
                 targetUser.setStatus(UserStatus.ONLINE);
-                targetUser.setLastSeenDate((LocalDateTime.now().toString()));
+                targetUser.setLastSeenDate((LocalDateTime.now()));
                 return targetUser;
             } else {
                 throw new LoginException("Incorrect password", loginUser.getUsername());
