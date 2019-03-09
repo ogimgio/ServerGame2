@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -59,7 +60,7 @@ public class UserService {
 
     public User getUser(long id) throws NotFoundException {
         User targetUser = this.userRepository.findById(id);
-        if (targetUser == null) {
+        if (targetUser == null || targetUser.equals(Optional.empty())) {
             throw new NotFoundException("User with userID " + id);
         } else {
             return this.userRepository.findById(id);
@@ -73,7 +74,7 @@ public class UserService {
 
     public User attemptLogin(User loginUser) throws ConflictException {
         User targetUser = this.userRepository.findByUsername(loginUser.getUsername());
-        if (targetUser != null) {
+        if (targetUser != null && !targetUser.equals(Optional.empty())) {
             if (targetUser.getPassword().equals(loginUser.getPassword())) {
                 targetUser.setStatus(UserStatus.ONLINE);
                 targetUser.setLastSeenDate((LocalDateTime.now()));
@@ -88,7 +89,7 @@ public class UserService {
 
     public User changeUser(long id, User changeUser) throws ConflictException, NotFoundException {
         User targetUser = this.userRepository.findById(id);
-        if (targetUser != null && changeUser.getId() == id) {
+        if (targetUser != null &&  !targetUser.equals(Optional.empty()) && changeUser.getId() == id) {
             LocalDate newBirthday = changeUser.getBirthday();
             String newUsername = changeUser.getUsername();
             if (newBirthday != null) {
