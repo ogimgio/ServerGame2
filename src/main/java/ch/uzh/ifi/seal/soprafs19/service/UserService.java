@@ -2,13 +2,14 @@ package ch.uzh.ifi.seal.soprafs19.service;
 
 import ch.uzh.ifi.seal.soprafs19.constant.UserStatus;
 import ch.uzh.ifi.seal.soprafs19.entity.User;
+import ch.uzh.ifi.seal.soprafs19.exceptions.ExceptionLogin;
 import ch.uzh.ifi.seal.soprafs19.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import ch.uzh.ifi.seal.soprafs19.exceptions.ExceptionLogin;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -29,7 +30,8 @@ public class UserService {
     public Iterable<User> getUsers() {
         return this.userRepository.findAll();
     }
-    public User getUser(String nameUser){ return this.userRepository.findByName(nameUser); }
+    public User getUser(long aidiUser){ return this.userRepository.findById(aidiUser); }
+    public User getUserByUsername (String usernameUser) {return this.userRepository.findByUsername(usernameUser);}
 
     public User createUser(User newUser) {
         newUser.creationDate =  LocalDate.now();
@@ -39,13 +41,29 @@ public class UserService {
         log.debug("Created Information for User: {}", newUser);
         return newUser;
     }
-    public String checkCredentials(String username, String password, String name){
-        User searchingUser = userRepository.findByName(name);
-        if(name == searchingUser.getName()){
-            return "Access granted";
+    public User checkCredentials(User loginUser) throws ExceptionLogin {
+        User targetUser = this.userRepository.findByUsername(loginUser.getUsername());
+        if (targetUser != null) {
+            if (targetUser.getPassword().equals(loginUser.getPassword())) {
+                targetUser.setStatus(UserStatus.ONLINE);
+                return targetUser;
+            } else {
+                throw new ExceptionLogin();
+            }
+        } else {
+            throw new ExceptionLogin();
         }
-        else{
-            return name;
+    }
+    public User updateUser(long idUser,User updatedUser){
+        User anUser = getUser(idUser);
+        if(anUser.getUsername() != updatedUser.getUsername() && updatedUser.getUsername() != null){
+            anUser.setUsername(updatedUser.getUsername());
         }
+        if(anUser.getBirthday() != updatedUser.getBirthday() && updatedUser.getBirthday() != null){
+            anUser.SetBirthday(updatedUser.getBirthday());
+        }
+        userRepository.save(anUser); //what if not?
+        return anUser;
+
     }
 }

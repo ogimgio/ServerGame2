@@ -1,9 +1,11 @@
 package ch.uzh.ifi.seal.soprafs19.controller;
 
 import ch.uzh.ifi.seal.soprafs19.entity.User;
+import ch.uzh.ifi.seal.soprafs19.exceptions.NotFoundException;
 import ch.uzh.ifi.seal.soprafs19.repository.UserRepository;
 import ch.uzh.ifi.seal.soprafs19.service.UserService;
 import org.springframework.web.bind.annotation.*;
+import ch.uzh.ifi.seal.soprafs19.exceptions.ExceptionLogin;
 
 import java.util.Map;
 
@@ -21,20 +23,34 @@ public class UserController {
         return service.getUsers();
     }
 
-    @GetMapping("/users/{nameUser}")
-    User getUser(@PathVariable String nameUser) {return service.getUser(nameUser); }
+    @GetMapping("/users/{idUser}")
+    User getUser(@PathVariable long idUser) {
+        return service.getUser(idUser);
+    }
 
     @PostMapping("/users")
     User createUser(@RequestBody User newUser) {
-        return this.service.createUser(newUser);
+        if (service.getUserByUsername(newUser.getUsername()) != null) {
+            throw new ExceptionLogin();
+        } else {
+            return this.service.createUser(newUser);
+        }
+    }
+    @PostMapping("/auth")
+    @ExceptionHandler({ExceptionLogin.class})
+    User loginUser (@RequestBody User loginUser){ return service.checkCredentials(loginUser); }
+
+    @PutMapping("/users/{idUser}")
+        User updateUser(@PathVariable long idUser,@RequestBody User updatedUser){
+            User anUser = this.service.getUser(idUser);
+            if(anUser != null){
+                return this.service.updateUser(idUser,updatedUser);
+
+            }
+            else{
+                throw new NotFoundException();
+            }
     }
 
-    @RequestMapping(value = "/auth", method = RequestMethod.POST)
-    String checkCredentials(@RequestBody Map<String,String> parameters){
-        String username = parameters.get("username");
-        String password = parameters.get("password");
-        String name = parameters.get("name");
-        return this.service.checkCredentials(username, password, name);
     }
 
-}
