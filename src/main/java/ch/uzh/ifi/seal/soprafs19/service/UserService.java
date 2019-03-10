@@ -61,7 +61,7 @@ public class UserService {
     public User getUser(long id) throws NotFoundException {
         User targetUser = this.userRepository.findById(id);
         if (targetUser == null || targetUser.equals(Optional.empty())) {
-            throw new NotFoundException("User with userID " + id);
+            throw new NotFoundException("User with userID " + id + " not found in database");
         } else {
             return this.userRepository.findById(id);
         }

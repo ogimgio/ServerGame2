@@ -69,8 +69,9 @@ public class UserServiceTest {
         Assert.assertNotNull(createdUser.getToken());
         Assert.assertEquals(createdUser.getStatus(), UserStatus.ONLINE);
         Assert.assertEquals(createdUser, userRepository.findByToken(createdUser.getToken()));
+        Assert.assertEquals(LocalDate.now(), createdUser.getRegistrationDate());
 
-        userRepository.delete(testUser);
+        this.userRepository.deleteAll();
     }
 
     @Test
@@ -92,9 +93,7 @@ public class UserServiceTest {
         Assert.assertEquals(testUser, result.get(0));
         Assert.assertEquals(testUser2, result.get(1));
 
-        userRepository.delete(testUser);
-        userRepository.delete(testUser2);
-
+        this.userRepository.deleteAll();
     }
 
     @Test
@@ -105,9 +104,12 @@ public class UserServiceTest {
         userRepository.save(testUser);
 
         Assert.assertEquals(testUser, userService.getUser(testUser.getId()));
+        testUser.seen();
+        LocalDateTime seenTime = LocalDateTime.now();
+        testUser.setLastSeenDate(seenTime);
+        Assert.assertEquals(seenTime, testUser.getLastSeenDate());
 
-
-        userRepository.delete(testUser);
+        this.userRepository.deleteAll();
     }
 
     @Test
@@ -140,7 +142,7 @@ public class UserServiceTest {
         Assert.assertEquals(testUser, loggedInUser);
         Assert.assertEquals(UserStatus.ONLINE, userRepository.findByUsername("testUsername").getStatus());
 
-        userRepository.delete(testUser);
+        this.userRepository.deleteAll();
     }
 
     @Test
@@ -160,7 +162,6 @@ public class UserServiceTest {
         Assert.assertEquals(changedUser.getUsername(), "asdf");
         Assert.assertEquals(changedUser.getBirthday().toString(), "1990-07-20");
 
-        userRepository.delete(changedUser);
-
+        this.userRepository.deleteAll();
     }
 }

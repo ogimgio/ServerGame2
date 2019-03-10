@@ -31,7 +31,8 @@ public class UserController {
         return null;
     }
 
-    // Putting to a single id means trying to change info about it
+    // Putting (or posting if putting still doesn't work) to a single id means trying to change info about it
+    // TODO: check those errors about put requests with Alex
     @PostMapping("/users/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void changeUser(@PathVariable long id, @RequestBody User changeUser) { service.changeUser(id, changeUser); }
