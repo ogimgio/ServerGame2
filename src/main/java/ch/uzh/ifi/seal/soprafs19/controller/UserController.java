@@ -26,6 +26,7 @@ public class UserController {
     User getUser(@PathVariable long id) { return service.getUser(id); }
 
     @DeleteMapping("/users/{id}")
+    @CrossOrigin
     User deleteUser(@PathVariable long id) {
         service.deleteUser(id);
         return null;
