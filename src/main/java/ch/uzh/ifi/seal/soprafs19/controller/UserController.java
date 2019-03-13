@@ -26,16 +26,13 @@ public class UserController {
     User getUser(@PathVariable long id) { return service.getUser(id); }
 
     @DeleteMapping("/users/{id}")
-    @CrossOrigin
-    User deleteUser(@PathVariable long id) {
-        service.deleteUser(id);
-        return null;
+    void deleteUser(@PathVariable long id, @RequestBody User delUser) {
+        service.deleteUser(id, delUser);
     }
 
     // Putting (or posting if putting still doesn't work) to a single id means trying to change info about it
     // TODO: check those errors about put requests with Alex
     @PutMapping("/users/{id}")
-    @CrossOrigin
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void changeUser(@PathVariable long id, @RequestBody User changeUser) { service.changeUser(id, changeUser); }
 

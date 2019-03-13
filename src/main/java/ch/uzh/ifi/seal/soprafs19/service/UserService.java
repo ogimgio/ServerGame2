@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,7 +32,10 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public Iterable<User> getUsers() {
+    public Iterable<User> getUsers() throws ConflictException {
+        /*if (this.userRepository.findByToken(tokenUser.getToken()) == null) {
+            throw new ConflictException("Invalid token");
+        }*/
         return this.userRepository.findAll();
     }
 
@@ -54,11 +58,11 @@ public class UserService {
         newUser.setRegistrationDate(LocalDate.now());
         newUser.setLastSeenDate(LocalDateTime.now());
         userRepository.save(newUser);
-        log.debug("Created Information for User: {}", newUser);
+        log.info("Created Information for User: {}", newUser);
         return newUser;
     }
 
-    public User getUser(long id) throws NotFoundException {
+    public User getUser(long id) throws NotFoundException, ConflictException {
         User targetUser = this.userRepository.findById(id);
         if (targetUser == null || targetUser.equals(Optional.empty())) {
             throw new NotFoundException("User with userID " + id + " not found in database");
@@ -67,9 +71,13 @@ public class UserService {
         }
     }
 
-    public void deleteUser(long id) {
+    public void deleteUser(long id, User delUser) throws ConflictException {
         User user = this.userRepository.findById(id);
-        this.userRepository.delete(user);
+        if (this.verifyToken(user, delUser)) {
+            this.userRepository.delete(user);
+        } else {
+            throw new ConflictException("Invalid token");
+        }
     }
 
     public User attemptLogin(User loginUser) throws ConflictException {
@@ -77,7 +85,7 @@ public class UserService {
         if (targetUser != null && !targetUser.equals(Optional.empty())) {
             if (targetUser.getPassword().equals(loginUser.getPassword())) {
                 targetUser.setStatus(UserStatus.ONLINE);
-                targetUser.setLastSeenDate((LocalDateTime.now()));
+                targetUser.seen();
                 return targetUser;
             } else {
                 throw new ConflictException("Incorrect password");
@@ -104,5 +112,12 @@ public class UserService {
         } else {
             throw new NotFoundException("User with id " + id + "not found");
         }
+    }
+
+    private boolean verifyToken(User targetUser, User tokenUser) {
+        if (targetUser.getToken().equals(tokenUser.getToken())) {
+            return true;
+        }
+        return false;
     }
 }
