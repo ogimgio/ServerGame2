@@ -4,8 +4,8 @@ import ch.uzh.ifi.seal.soprafs19.constant.UserStatus;
 import ch.uzh.ifi.seal.soprafs19.entity.User;
 import ch.uzh.ifi.seal.soprafs19.exceptions.ConflictException;
 import ch.uzh.ifi.seal.soprafs19.exceptions.NotFoundException;
+import ch.uzh.ifi.seal.soprafs19.exceptions.UnauthorizedException;
 import ch.uzh.ifi.seal.soprafs19.repository.UserRepository;
-import org.aspectj.weaver.ast.Not;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +31,10 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public Iterable<User> getUsers() {
+    public Iterable<User> getUsers(String token) {
+        if (!this.verifyRequestToken(token)) {
+            throw new UnauthorizedException("Invalid token");
+        }
         return this.userRepository.findAll();
     }
 
@@ -58,7 +61,10 @@ public class UserService {
         return newUser;
     }
 
-    public User getUser(long id) throws NotFoundException {
+    public User getUser(long id, String token) throws NotFoundException, UnauthorizedException {
+        if (!this.verifyRequestToken(token)) {
+            throw new UnauthorizedException("Invalid token");
+        }
         User targetUser = this.userRepository.findById(id);
         if (targetUser == null || targetUser.equals(Optional.empty())) {
             throw new NotFoundException("User with userID " + id + " not found in database");
@@ -67,9 +73,12 @@ public class UserService {
         }
     }
 
-    public void deleteUser(long id) {
-        User user = this.userRepository.findById(id);
-        this.userRepository.delete(user);
+    public void deleteUser(long id, String token) throws UnauthorizedException {
+        User targetUser = this.userRepository.findById(id);
+        if (!targetUser.getToken().equals(token)) {
+            throw new UnauthorizedException("Invalid token for user with id " + id);
+        }
+        this.userRepository.delete(targetUser);
     }
 
     public User attemptLogin(User loginUser) throws ConflictException {
@@ -87,8 +96,12 @@ public class UserService {
         }
     }
 
-    public User changeUser(long id, User changeUser) throws ConflictException, NotFoundException {
+    public User changeUser(long id, User changeUser)
+            throws ConflictException, NotFoundException, UnauthorizedException {
         User targetUser = this.userRepository.findById(id);
+        if (!targetUser.getToken().equals(changeUser.getToken())) {
+            throw new UnauthorizedException("Invalid token for user with id " + id);
+        }
         if (targetUser != null &&  !targetUser.equals(Optional.empty()) && changeUser.getId() == id) {
             LocalDate newBirthday = changeUser.getBirthday();
             String newUsername = changeUser.getUsername();
@@ -103,6 +116,15 @@ public class UserService {
             return targetUser;
         } else {
             throw new NotFoundException("User with id " + id + "not found");
+        }
+    }
+
+    private boolean verifyRequestToken(String token) {
+        User requestingUser = this.userRepository.findByToken(token);
+        if(requestingUser == null || requestingUser.equals(Optional.empty())) {
+            return false;
+        } else {
+            return true;
         }
     }
 }

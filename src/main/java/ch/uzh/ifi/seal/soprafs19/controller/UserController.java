@@ -18,17 +18,17 @@ public class UserController {
     }
 
     @GetMapping("/users")
-    Iterable<User> all() {
-        return service.getUsers();
+    Iterable<User> all(@RequestHeader("token") String token) {
+        return service.getUsers(token);
     }
 
     @GetMapping("/users/{id}")
-    User getUser(@PathVariable long id) { return service.getUser(id); }
+    User getUser(@PathVariable long id, @RequestHeader("token") String token) { return service.getUser(id, token); }
 
     @DeleteMapping("/users/{id}")
     @CrossOrigin
-    User deleteUser(@PathVariable long id) {
-        service.deleteUser(id);
+    User deleteUser(@PathVariable long id, @RequestHeader("token") String token) {
+        service.deleteUser(id, token);
         return null;
     }
 
