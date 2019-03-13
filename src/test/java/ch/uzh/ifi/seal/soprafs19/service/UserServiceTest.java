@@ -119,7 +119,7 @@ public class UserServiceTest {
         User testUser = this.createTestUser("testName", "testUsername", "1234");
         userRepository.save(testUser);
 
-        userService.deleteUser(testUser.getId());
+        userService.deleteUser(testUser.getId(), testUser);
 
         Assert.assertEquals(Optional.empty(), userRepository.findById(testUser.getId()));
     }

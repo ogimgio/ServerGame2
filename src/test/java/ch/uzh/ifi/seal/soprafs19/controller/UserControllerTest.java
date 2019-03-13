@@ -115,9 +115,10 @@ public class UserControllerTest {
     public void deleteUser() {
         this.setup();
 
-        Long id = this.userRepository.findByName(testName).getId();
+        User deletion = this.userRepository.findByName(testName);
+        Long id = deletion.getId();
 
-        this.userController.deleteUser(id);
+        this.userController.deleteUser(id, deletion);
 
         Assert.assertNull(this.userRepository.findByName(testName));
 

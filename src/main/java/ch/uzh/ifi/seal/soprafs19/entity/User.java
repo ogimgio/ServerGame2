@@ -39,10 +39,10 @@ public class User implements Serializable {
 	private LocalDate birthday;
 
 	@Column(nullable = false)
-	private LocalDate registrationDate;
+	private LocalDate registrationDate; // 1992-12-28
 
 	@Column(nullable = false)
-	private LocalDateTime lastSeenDate;
+	private LocalDateTime lastSeenDate; // 1992-12-28T00:00:00
 
 	public Long getId() {
 		return id;

@@ -57,7 +57,7 @@ public class UserService {
         newUser.setRegistrationDate(LocalDate.now());
         newUser.setLastSeenDate(LocalDateTime.now());
         userRepository.save(newUser);
-        log.debug("Created Information for User: {}", newUser);
+        log.info("Created Information for User: {}", newUser);
         return newUser;
     }
 
@@ -86,7 +86,7 @@ public class UserService {
         if (targetUser != null && !targetUser.equals(Optional.empty())) {
             if (targetUser.getPassword().equals(loginUser.getPassword())) {
                 targetUser.setStatus(UserStatus.ONLINE);
-                targetUser.setLastSeenDate((LocalDateTime.now()));
+                targetUser.seen();
                 return targetUser;
             } else {
                 throw new ConflictException("Incorrect password");
