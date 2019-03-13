@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ch.uzh.ifi.seal.soprafs19.exceptions.ExceptionLogin;
+import org.springframework.web.bind.annotation.ResponseBody;
+
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -54,8 +56,16 @@ public class UserService {
             throw new ExceptionLogin();
         }
     }
+    public User logOut(long idUser, User logOutUser){
+        logOutUser.setStatus(UserStatus.OFFLINE);
+        return logOutUser;
+    }
     public User updateUser(long idUser,User updatedUser){
+        User checkUser = this.userRepository.findByUsername(updatedUser.getUsername());
         User anUser = getUser(idUser);
+        if(checkUser!= null){
+            throw new ExceptionLogin();
+        }
         if(anUser.getUsername() != updatedUser.getUsername() && updatedUser.getUsername() != null){
             anUser.setUsername(updatedUser.getUsername());
         }

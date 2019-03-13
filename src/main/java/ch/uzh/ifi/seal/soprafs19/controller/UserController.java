@@ -36,10 +36,17 @@ public class UserController {
             return this.service.createUser(newUser);
         }
     }
+    @PostMapping("/logout/{id}")
+    User logoutUser(@PathVariable long id){
+        User logoutUser = service.getUser(id);
+        return service.logOut(id,logoutUser);
+    }
+
     @PostMapping("/auth")
     @ExceptionHandler({ExceptionLogin.class})
     User loginUser (@RequestBody User loginUser){ return service.checkCredentials(loginUser); }
 
+    @CrossOrigin
     @PutMapping("/users/{idUser}")
         User updateUser(@PathVariable long idUser,@RequestBody User updatedUser){
             User anUser = this.service.getUser(idUser);
