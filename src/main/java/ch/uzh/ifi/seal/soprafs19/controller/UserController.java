@@ -26,12 +26,11 @@ public class UserController {
     User getUser(@PathVariable long id, @RequestHeader("token") String token) { return service.getUser(id, token); }
 
     @DeleteMapping("/users/{id}")
-    void deleteUser(@PathVariable long id, @RequestBody User delUser) {
-        service.deleteUser(id, delUser);
+    void deleteUser(@PathVariable long id, @RequestHeader("token") String token) {
+        service.deleteUser(id, token);
     }
 
     // Putting (or posting if putting still doesn't work) to a single id means trying to change info about it
-    // TODO: check those errors about put requests with Alex
     @PutMapping("/users/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void changeUser(@PathVariable long id, @RequestBody User changeUser) { service.changeUser(id, changeUser); }

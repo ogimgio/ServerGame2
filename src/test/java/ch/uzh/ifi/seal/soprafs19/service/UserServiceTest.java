@@ -85,7 +85,7 @@ public class UserServiceTest {
         User testUser2 = this.createTestUser("testName2", "testUsername2", "2345");
         userRepository.save(testUser2);
 
-        Iterable<User> gotUsers = userService.getUsers();
+        Iterable<User> gotUsers = userService.getUsers(testUser.getToken());
 
         List<User> result = StreamSupport.stream(gotUsers.spliterator(), false)
                 .collect(Collectors.toList());
@@ -103,7 +103,7 @@ public class UserServiceTest {
         User testUser = this.createTestUser("testName", "testUsername", "1234");
         userRepository.save(testUser);
 
-        Assert.assertEquals(testUser, userService.getUser(testUser.getId()));
+        Assert.assertEquals(testUser, userService.getUser(testUser.getId(), testUser.getToken()));
         testUser.seen();
         LocalDateTime seenTime = LocalDateTime.now();
         testUser.setLastSeenDate(seenTime);
@@ -119,7 +119,7 @@ public class UserServiceTest {
         User testUser = this.createTestUser("testName", "testUsername", "1234");
         userRepository.save(testUser);
 
-        userService.deleteUser(testUser.getId(), testUser);
+        userService.deleteUser(testUser.getId(), testUser.getToken());
 
         Assert.assertEquals(Optional.empty(), userRepository.findById(testUser.getId()));
     }

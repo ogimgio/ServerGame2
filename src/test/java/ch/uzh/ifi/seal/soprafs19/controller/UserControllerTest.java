@@ -63,7 +63,7 @@ public class UserControllerTest {
         return testUser;
     }
 
-    private void setup() {
+    private String setup() {
         this.userRepository.deleteAll();
         Assert.assertNotNull(this.userRepository);
         Assert.assertNotNull(this.userController);
@@ -78,13 +78,15 @@ public class UserControllerTest {
 
         this.userRepository.save(testUser1);
         this.userRepository.save(testUser2);
+
+        return testUser1.getToken();
     }
 
     @Test
     public void all() {
-        this.setup();
+        String token = this.setup();
 
-        Iterable<User> results = this.userController.all();
+        Iterable<User> results = this.userController.all(token);
         for(User u: results) {
             Assert.assertThat(u.getName(), anyOf(is(testName), is(testName2)));
             Assert.assertThat(u.getUsername(), anyOf(is(testUsername), is(testUsername2)));
@@ -97,11 +99,11 @@ public class UserControllerTest {
 
     @Test
     public void getUser() {
-        this.setup();
+        String token = this.setup();
 
         Long id = this.userRepository.findByName(testName).getId();
 
-        User result = this.userController.getUser(id);
+        User result = this.userController.getUser(id, token);
 
         Assert.assertEquals(testName, result.getName());
         Assert.assertEquals(testUsername, result.getUsername());
@@ -117,8 +119,9 @@ public class UserControllerTest {
 
         User deletion = this.userRepository.findByName(testName);
         Long id = deletion.getId();
+        String token = deletion.getToken();
 
-        this.userController.deleteUser(id, deletion);
+        this.userController.deleteUser(id, token);
 
         Assert.assertNull(this.userRepository.findByName(testName));
 
@@ -127,7 +130,7 @@ public class UserControllerTest {
 
     @Test
     public void changeUser() {
-        this.setup();
+        String token = this.setup();
 
         Long id = this.userRepository.findByName(testName).getId();
 
@@ -200,10 +203,10 @@ public class UserControllerTest {
 
     @Test(expected = NotFoundException.class)
     public void getFail() {
-        this.setup();
+        String token = this.setup();
 
         try {
-            User result = this.userController.getUser(29L);
+            User result = this.userController.getUser(29L, token);
         } catch (NotFoundException e) {
             Assert.assertEquals("User with userID 29 not found in database", e.getMessage());
             e.setMessage("asdf");
