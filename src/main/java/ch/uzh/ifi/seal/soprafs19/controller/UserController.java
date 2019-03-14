@@ -3,6 +3,8 @@ package ch.uzh.ifi.seal.soprafs19.controller;
 import ch.uzh.ifi.seal.soprafs19.entity.User;
 import ch.uzh.ifi.seal.soprafs19.exceptions.ConflictException;
 import ch.uzh.ifi.seal.soprafs19.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -11,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class UserController {
+
+    private final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserService service;
 
@@ -42,6 +46,7 @@ public class UserController {
     // REST specification requires this method to return a http header containing the new user's profile location
     @PostMapping("/users")
     ResponseEntity<String> createUser(@RequestBody User newUser) {
+        log.info("Trying to create user with username " + newUser.getUsername());
         try {
             User result = this.service.createUser(newUser);
             HttpHeaders responseHeaders = new HttpHeaders();

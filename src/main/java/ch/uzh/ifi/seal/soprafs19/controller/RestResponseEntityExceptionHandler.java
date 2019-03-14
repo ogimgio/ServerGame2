@@ -18,21 +18,27 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
     @ExceptionHandler(value = ConflictException.class)
     protected ResponseEntity<Object> handleConflict(RuntimeException ex, WebRequest request) {
         String bodyOfResponse = ex.getMessage();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("reason", "Conflict");
         return handleExceptionInternal(ex, bodyOfResponse,
-                new HttpHeaders(), HttpStatus.CONFLICT, request);
+                headers, HttpStatus.CONFLICT, request);
     }
 
     @ExceptionHandler(value = NotFoundException.class)
     protected ResponseEntity<Object> handleNotFound(RuntimeException ex, WebRequest request) {
         String bodyOfResponse = ex.getMessage();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("reason", "Not Found");
         return handleExceptionInternal(ex, bodyOfResponse,
-                new HttpHeaders(), HttpStatus.NOT_FOUND, request);
+                headers, HttpStatus.NOT_FOUND, request);
     }
 
     @ExceptionHandler(value = UnauthorizedException.class)
     protected ResponseEntity<Object> handleUnauthorized(RuntimeException ex, WebRequest request) {
         String bodyOfResponse = ex.getMessage();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("reason", "Unauthorized");
         return handleExceptionInternal(ex, bodyOfResponse,
-                new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
+                headers, HttpStatus.UNAUTHORIZED, request);
     }
 }
