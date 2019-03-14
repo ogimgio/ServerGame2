@@ -1,39 +1,43 @@
 package ch.uzh.ifi.seal.soprafs19.integration;
 
 import ch.uzh.ifi.seal.soprafs19.Application;
+import ch.uzh.ifi.seal.soprafs19.TestUser;
 import ch.uzh.ifi.seal.soprafs19.constant.UserStatus;
 import ch.uzh.ifi.seal.soprafs19.controller.UserController;
 import ch.uzh.ifi.seal.soprafs19.entity.User;
 import ch.uzh.ifi.seal.soprafs19.repository.UserRepository;
 import ch.uzh.ifi.seal.soprafs19.service.UserService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockServletContext;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
-import java.io.IOException;
+import javax.servlet.ServletContext;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebAppConfiguration
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes= Application.class)
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest(classes = Application.class)
 public class UserControllerIntegrationTest {
 
     private static String testUsername = "testUsername";
@@ -45,6 +49,10 @@ public class UserControllerIntegrationTest {
     private static LocalDate testBirthday = LocalDate.parse("1992-03-28");
     private static LocalDate testBirthday2 = LocalDate.parse("2001-10-02");
 
+    @Qualifier("userRepository")
+    @Autowired
+    private UserRepository userRepository;
+
     @Autowired
     private UserService userService;
 
@@ -52,7 +60,141 @@ public class UserControllerIntegrationTest {
     private UserController userController;
 
     @Autowired
-    private UserRepository userRepository;
+    private WebApplicationContext wac;
+
+    private MockMvc mockMvc;
+
+    @Before
+    public void mockSetup() throws Exception {
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
+    }
+
+    @Test
+    public void givenWac_whenServletContext_thenItProvidesGreetController() {
+        ServletContext servletContext = wac.getServletContext();
+
+        Assert.assertNotNull(servletContext);
+        Assert.assertTrue(servletContext instanceof MockServletContext);
+        Assert.assertNotNull(wac.getBean("userController"));
+    }
+
+    @Test
+    public void POST_createUser_BodyIsOk_then201IsReceived() throws Exception {
+        this.setup();
+        User testUser = createTestUser(1);
+
+        String body = this.composeBody(testUser);
+
+        this.mockMvc.perform(post("/users")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(body))
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", "/users?id=" + testUser.getId().toString()));
+    }
+
+    @Test
+    public void POST_createUser_UsernameAlreadyInDatabase_then409IsReceived() throws Exception {
+        this.setup();
+        User testUser = createTestUser(1);
+        this.userService.createUser(testUser);
+
+        String body = this.composeBody(testUser);
+
+        this.mockMvc.perform(post("/users").header("Content-Type", "application/json")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(body))
+                .andDo(print())
+                .andExpect(status().isConflict())
+                .andExpect(content().contentType("application/json"))
+                .andExpect(jsonPath("$.message").value("Username already exists in database"));
+    }
+
+    @Test
+    public void GET_userFromID_IdIsFound_then200IsReceived() throws Exception {
+        this.setup();
+        User testUser = createTestUser(1);
+        this.userService.createUser(testUser);
+
+        this.mockMvc.perform(get("/users/" + testUser.getId().toString())
+                .header("Content-Type", "application/json")
+                .header("token", testUser.getToken()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json"))
+                .andExpect(jsonPath("$.username").value(testUser.getUsername()))
+                .andExpect(jsonPath("$.token").value(testUser.getToken()));
+    }
+
+    @Test
+    public void GET_userFromID_IdIsNotFound_then404IsReceived() throws Exception {
+        this.setup();
+        User testUser = createTestUser(1);
+        this.userService.createUser(testUser);
+
+        Long wrongId = testUser.getId() + 1;
+
+        this.mockMvc.perform(get("/users/" + wrongId.toString())
+                .header("Content-Type", "application/json")
+                .header("token", testUser.getToken()))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType("application/json"))
+                .andExpect(jsonPath("$.message").value("User with userID " + wrongId + " not found in database"));
+    }
+
+    @Test
+    public void PUT_changeUserWithIDandToken_correctInfo_then204isReceived() throws Exception {
+        this.setup();
+        User testUser = createTestUser(1);
+
+        // Create user beforehand
+        userService.createUser(testUser);
+
+        // Make changes to username and birthday
+        testUser.setUsername("asdf");
+        testUser.setBirthday(LocalDate.parse("2010-02-03"));
+
+
+        // User -> Json
+        String body = this.composeBody(testUser);
+
+        this.mockMvc.perform(get("/users/" + testUser.getId().toString())
+                .header("token", testUser.getToken())
+                .header("Content-Type", "application/json")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(body))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void PUT_changeUserWithIDandToken_incorrectID_then404isReceived() throws Exception {
+        this.setup();
+        User testUser = createTestUser(1);
+
+        // Create user beforehand
+        userService.createUser(testUser);
+
+        // Make changes to username and birthday
+        testUser.setUsername("asdf");
+        testUser.setBirthday(LocalDate.parse("2010-02-03"));
+
+
+        // User -> Json
+        String body = this.composeBody(testUser);
+
+        Long wrongId = testUser.getId() + 1;
+
+        this.mockMvc.perform(get("/users/" + wrongId.toString())
+                .header("token", testUser.getToken())
+                .header("Content-Type", "application/json")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(body))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("User with userID " + wrongId + " not found in database"));
+    }
 
     private void setup() {
         this.userRepository.deleteAll();
@@ -66,6 +208,9 @@ public class UserControllerIntegrationTest {
     private User createTestUser(int i) {
         User testUser = new User();
         if (i == 1) {
+            // This user ID is set to 2 because most likely the default root user in UserService @PostConstruct init
+            // method gets ID 1
+            testUser.setId(2L);
             testUser.setName(testName);
             testUser.setUsername(testUsername);
             testUser.setPassword(testPassword);
@@ -75,6 +220,9 @@ public class UserControllerIntegrationTest {
             testUser.setRegistrationDate(LocalDate.now());
             testUser.setLastSeenDate(LocalDateTime.now());
         } else if (i == 2) {
+            // This user ID is set to 4 because to generate wrong ID requests we increment user IDs by 1, this would
+            // result in the ID being 3 for test user 1
+            testUser.setId(4L);
             testUser.setName(testName2);
             testUser.setUsername(testUsername2);
             testUser.setPassword(testPassword2);
@@ -89,195 +237,10 @@ public class UserControllerIntegrationTest {
         return testUser;
     }
 
-    @Test
-    public void POST_createUser_BodyIsOk_then201IsReceived() throws IOException {
-        this.setup();
-        User testUser = createTestUser(1);
-
-        // User -> Json
+    private String composeBody(User user) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
+        TestUser testUser = new TestUser(user);
         String body = mapper.writeValueAsString(testUser);
-
-        // Request body
-        HttpEntity entity = new StringEntity(body);
-        // Request url
-        HttpPost request = new HttpPost("http://localhost:8080/users");
-
-        // add body and header
-        request.setEntity(entity);
-        request.addHeader("Content-Type", "application/json");
-
-        // Execute request and save response
-        CloseableHttpClient httpclient = HttpClientBuilder.create().build();
-        HttpResponse response = httpclient.execute(request);
-
-        // Test response according to assignment rest spec
-        Assert.assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.CREATED.value()));
-        Assert.assertThat(response.getHeaders("Location")[0].getElements()[0].getValue(),
-                containsString("/users?id="));
+        return body;
     }
-
-    @Test
-    public void POST_createUser_UsernameAlreadyInDatabase_then409IsReceived() throws IOException {
-        this.setup();
-        User testUser = createTestUser(1);
-
-        // Create user beforehand -> expecting 409: "Username already exists in database"
-        userService.createUser(testUser);
-
-        // User -> Json
-        ObjectMapper mapper = new ObjectMapper();
-        String body = mapper.writeValueAsString(testUser);
-
-        // Request body
-        HttpEntity entity = new StringEntity(body);
-        // Request url
-        HttpPost request = new HttpPost("http://localhost:8080/users");
-
-        // add body and header
-        request.setEntity(entity);
-        request.addHeader("Content-Type", "application/json");
-
-        // Execute request and save response
-        CloseableHttpClient httpclient = HttpClientBuilder.create().build();
-        HttpResponse response = httpclient.execute(request);
-
-        // Test response according to expectations
-        Assert.assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.CONFLICT.value()));
-        String responseBody = mapper.readValue(response.getEntity().getContent(), String.class);
-        Assert.assertEquals(responseBody, "Username already exists in database");
-    }
-
-    @Test
-    public void GET_userFromID_IdIsFound_then200IsReceived() throws IOException {
-        this.setup();
-        User testUser = createTestUser(1);
-
-        // Create user beforehand -> Expecting 200, no body
-        userService.createUser(testUser);
-
-
-        // Request url
-        HttpGet request = new HttpGet("http://localhost:8080/users/" + testUser.getId().toString());
-
-        // add header
-        request.addHeader("Content-Type", "application/json");
-
-        // Execute request and save response
-        CloseableHttpClient httpclient = HttpClientBuilder.create().build();
-        HttpResponse response = httpclient.execute(request);
-        ObjectMapper mapper = new ObjectMapper();
-        User returnedUser = mapper.readValue(response.getEntity().getContent(), User.class);
-
-        // Test response according to expectations
-        Assert.assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.OK.value()));
-        Assert.assertEquals(testUser, returnedUser);
-    }
-
-    @Test
-    public void GET_userFromID_IdIsNotFound_then404IsReceived() throws IOException {
-        this.setup();
-        User testUser = createTestUser(1);
-
-        // Create user beforehand -> Expecting 404, error msg (String) as body
-        userService.createUser(testUser);
-
-
-        // Request url with wrong Id ->
-        Long wrongId = testUser.getId() + 1;
-        HttpGet request = new HttpGet("http://localhost:8080/users/" + wrongId.toString());
-
-        // add header
-        request.addHeader("Content-Type", "application/json");
-
-        // Execute request and save response
-        CloseableHttpClient httpclient = HttpClientBuilder.create().build();
-        HttpResponse response = httpclient.execute(request);
-        ObjectMapper mapper = new ObjectMapper();
-        String responseBody = mapper.readValue(response.getEntity().getContent(), String.class);
-
-        // Test response according to expectations
-        Assert.assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.NOT_FOUND.value()));
-        Assert.assertEquals(responseBody, "User with userID " + wrongId + " not found in database");
-    }
-
-    @Test
-    public void PUT_changeUserWithIDandToken_correctInfo_then204isReceived() throws IOException {
-        this.setup();
-        User testUser = createTestUser(1);
-
-        // Create user beforehand
-        userService.createUser(testUser);
-
-        // Make changes to username and birthday
-        testUser.setUsername("asdf");
-        testUser.setBirthday(LocalDate.parse("2010-02-03"));
-
-
-        // User -> Json
-        ObjectMapper mapper = new ObjectMapper();
-        String body = mapper.writeValueAsString(testUser);
-
-        // Request body
-        HttpEntity entity = new StringEntity(body);
-        // Request url
-        HttpPut request = new HttpPut("http://localhost:8080/users/" + testUser.getId().toString());
-
-        // add body
-        request.setEntity(entity);
-
-        // add headers
-        request.addHeader("Content-Type", "application/json");
-        request.addHeader("token", testUser.getToken());
-
-        // Execute request and save response
-        CloseableHttpClient httpclient = HttpClientBuilder.create().build();
-        HttpResponse response = httpclient.execute(request);
-
-        // Test response according to expectations
-        Assert.assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.NO_CONTENT.value()));
-        Assert.assertEquals(response.getEntity().getContentLength(), 0L);
-    }
-
-    @Test
-    public void PUT_changeUserWithIDandToken_incorrectID_then404isReceived() throws IOException {
-        this.setup();
-        User testUser = createTestUser(1);
-
-        // Create user beforehand
-        userService.createUser(testUser);
-
-        // Make changes to username and birthday
-        testUser.setUsername("asdf");
-        testUser.setBirthday(LocalDate.parse("2010-02-03"));
-
-
-        // User -> Json
-        ObjectMapper mapper = new ObjectMapper();
-        String body = mapper.writeValueAsString(testUser);
-
-        // Request body
-        HttpEntity entity = new StringEntity(body);
-        // Wrong Id
-        Long wrongId = testUser.getId() + 1;
-        // Request url
-        HttpPut request = new HttpPut("http://localhost:8080/users/" + wrongId.toString());
-
-        // add body
-        request.setEntity(entity);
-
-        // add headers
-        request.addHeader("Content-Type", "application/json");
-        request.addHeader("token", testUser.getToken());
-
-        // Execute request and save response
-        CloseableHttpClient httpclient = HttpClientBuilder.create().build();
-        HttpResponse response = httpclient.execute(request);
-        String responseBody = mapper.readValue(response.getEntity().getContent(), String.class);
-
-        // Test response according to expectations
-        Assert.assertThat(response.getStatusLine().getStatusCode(), equalTo(HttpStatus.NOT_FOUND.value()));
-        Assert.assertEquals(responseBody, "User with id " + wrongId.toString() + "not found");
-    }
-
 }
