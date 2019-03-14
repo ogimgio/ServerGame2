@@ -1,6 +1,5 @@
 package ch.uzh.ifi.seal.soprafs19.integration;
 
-import ch.uzh.ifi.seal.soprafs19.Application;
 import ch.uzh.ifi.seal.soprafs19.TestUser;
 import ch.uzh.ifi.seal.soprafs19.constant.UserStatus;
 import ch.uzh.ifi.seal.soprafs19.controller.UserController;
@@ -10,18 +9,18 @@ import ch.uzh.ifi.seal.soprafs19.service.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletContext;
@@ -35,9 +34,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebAppConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = Application.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 public class UserControllerIntegrationTest {
 
     private static String testUsername = "testUsername";
@@ -62,12 +61,10 @@ public class UserControllerIntegrationTest {
     @Autowired
     private WebApplicationContext wac;
 
+    @Autowired
     private MockMvc mockMvc;
 
-    @Before
-    public void mockSetup() throws Exception {
-        this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
-    }
+    private Logger log = LoggerFactory.getLogger(UserControllerIntegrationTest.class);
 
     @Test
     public void givenWac_whenServletContext_thenItProvidesGreetController() {
@@ -114,6 +111,7 @@ public class UserControllerIntegrationTest {
     public void GET_userFromID_IdIsFound_then200IsReceived() throws Exception {
         this.setup();
         User testUser = createTestUser(1);
+        this.log.info(userService.getUser(testUser.getId(), testUser.getToken()).toString());
         this.userService.createUser(testUser);
 
         this.mockMvc.perform(get("/users/" + testUser.getId().toString())
