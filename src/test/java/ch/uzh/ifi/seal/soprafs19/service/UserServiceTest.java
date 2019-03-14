@@ -60,6 +60,7 @@ public class UserServiceTest {
 
     @Test
     public void createUser() {
+        this.userRepository.deleteAll();
         Assert.assertThat(userRepository.findByUsername("testUsername"), anyOf(is(nullValue()), is(Optional.empty())));
 
         User testUser = this.createTestUser("testName", "testUsername", "1234");
@@ -76,6 +77,7 @@ public class UserServiceTest {
 
     @Test
     public void getUsers() {
+        this.userRepository.deleteAll();
         Assert.assertThat(userRepository.findByUsername("testUsername"), anyOf(is(nullValue()), is(Optional.empty())));
         Assert.assertThat(userRepository.findByUsername("testUsername2"), anyOf(is(nullValue()), is(Optional.empty())));
 
@@ -90,14 +92,17 @@ public class UserServiceTest {
         List<User> result = StreamSupport.stream(gotUsers.spliterator(), false)
                 .collect(Collectors.toList());
 
-        Assert.assertEquals(testUser, result.get(0));
-        Assert.assertEquals(testUser2, result.get(1));
+        Assert.assertThat(result.get(1).getUsername(), anyOf(is("testUsername"), is("testUsername2")));
+        if (result.size() > 2) {
+            Assert.assertThat(result.get(2).getUsername(), anyOf(is("testUsername"), is("testUsername2")));
+        }
 
         this.userRepository.deleteAll();
     }
 
     @Test
     public void getUser() {
+        this.userRepository.deleteAll();
         Assert.assertThat(userRepository.findByUsername("testUsername"), anyOf(is(nullValue()), is(Optional.empty())));
 
         User testUser = this.createTestUser("testName", "testUsername", "1234");
@@ -114,6 +119,7 @@ public class UserServiceTest {
 
     @Test
     public void deleteUser() {
+        this.userRepository.deleteAll();
         Assert.assertThat(userRepository.findByUsername("testUsername"), anyOf(is(nullValue()), is(Optional.empty())));
 
         User testUser = this.createTestUser("testName", "testUsername", "1234");
@@ -126,6 +132,7 @@ public class UserServiceTest {
 
     @Test
     public void attemptLogin() {
+        this.userRepository.deleteAll();
         Assert.assertThat(userRepository.findByUsername("testUsername"), anyOf(is(nullValue()), is(Optional.empty())));
 
         User testUser = this.createTestUser("testName", "testUsername", "1234");
@@ -147,6 +154,7 @@ public class UserServiceTest {
 
     @Test
     public void changeUser() {
+        this.userRepository.deleteAll();
         Assert.assertThat(userRepository.findByUsername("testUsername"), anyOf(is(nullValue()), is(Optional.empty())));
 
         User testUser = this.createTestUser("testName", "testUsername", "1234");
@@ -155,6 +163,7 @@ public class UserServiceTest {
 
         User testChangeUser = this.createTestUser("testName", "asdf", "1234");
         testChangeUser.setId(testUser.getId());
+        testChangeUser.setToken(testUser.getToken());
         testChangeUser.setBirthday(LocalDate.parse("1990-07-20"));
 
         User changedUser = userService.changeUser(testUser.getId(), testChangeUser);

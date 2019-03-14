@@ -29,8 +29,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -103,23 +102,23 @@ public class UserControllerIntegrationTest {
                 .content(body))
                 .andDo(print())
                 .andExpect(status().isConflict())
-                .andExpect(content().contentType("application/json"))
-                .andExpect(jsonPath("$.message").value("Username already exists in database"));
+                .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                .andExpect(content().string("Username already exists in database"));
     }
 
     @Test
     public void GET_userFromID_IdIsFound_then200IsReceived() throws Exception {
         this.setup();
         User testUser = createTestUser(1);
-        this.log.info(userService.getUser(testUser.getId(), testUser.getToken()).toString());
         this.userService.createUser(testUser);
+        Long id = this.userRepository.findByUsername(testUser.getUsername()).getId();
 
-        this.mockMvc.perform(get("/users/" + testUser.getId().toString())
+        this.mockMvc.perform(get("/users/" + id.toString())
                 .header("Content-Type", "application/json")
                 .header("token", testUser.getToken()))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(content().contentType("application/json"))
+                .andExpect(content().contentType("application/json;charset=UTF-8"))
                 .andExpect(jsonPath("$.username").value(testUser.getUsername()))
                 .andExpect(jsonPath("$.token").value(testUser.getToken()));
     }
@@ -130,15 +129,15 @@ public class UserControllerIntegrationTest {
         User testUser = createTestUser(1);
         this.userService.createUser(testUser);
 
-        Long wrongId = testUser.getId() + 1;
+        Long wrongId = testUser.getId() + 27;
 
         this.mockMvc.perform(get("/users/" + wrongId.toString())
-                .header("Content-Type", "application/json")
+                .header("Content-Type", "application/json;charset=UTF-8")
                 .header("token", testUser.getToken()))
                 .andDo(print())
                 .andExpect(status().isNotFound())
-                .andExpect(content().contentType("application/json"))
-                .andExpect(jsonPath("$.message").value("User with userID " + wrongId + " not found in database"));
+                .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                .andExpect(content().string("User with userID " + wrongId + " not found in database"));
     }
 
     @Test
@@ -148,8 +147,10 @@ public class UserControllerIntegrationTest {
 
         // Create user beforehand
         userService.createUser(testUser);
+        Long id = this.userRepository.findByUsername(testUser.getUsername()).getId();
 
         // Make changes to username and birthday
+        testUser.setId(id);
         testUser.setUsername("asdf");
         testUser.setBirthday(LocalDate.parse("2010-02-03"));
 
@@ -157,9 +158,9 @@ public class UserControllerIntegrationTest {
         // User -> Json
         String body = this.composeBody(testUser);
 
-        this.mockMvc.perform(get("/users/" + testUser.getId().toString())
+        this.mockMvc.perform(put("/users/" + id.toString())
                 .header("token", testUser.getToken())
-                .header("Content-Type", "application/json")
+                .header("Content-Type", "application/json;charset=UTF-8")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .content(body))
                 .andDo(print())
@@ -186,12 +187,13 @@ public class UserControllerIntegrationTest {
 
         this.mockMvc.perform(get("/users/" + wrongId.toString())
                 .header("token", testUser.getToken())
-                .header("Content-Type", "application/json")
+                .header("Content-Type", "application/json;charset=UTF-8")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .content(body))
                 .andDo(print())
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("User with userID " + wrongId + " not found in database"));
+                .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                .andExpect(content().string("User with userID " + wrongId + " not found in database"));
     }
 
     private void setup() {

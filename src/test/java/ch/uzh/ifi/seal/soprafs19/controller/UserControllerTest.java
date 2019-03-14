@@ -73,8 +73,8 @@ public class UserControllerTest {
 
         User testUser1 = this.createTestUser(testName, testUsername, testPassword, testBirthday);
         User testUser2 = this.createTestUser(testName2, testUsername2, testPassword2, testBirthday2);
-        testUser1.setId(1L);
-        testUser2.setId(2L);
+        testUser1.setId(2L);
+        testUser2.setId(3L);
 
         this.userRepository.save(testUser1);
         this.userRepository.save(testUser2);
@@ -138,6 +138,7 @@ public class UserControllerTest {
         changeUser.setId(id);
         changeUser.setUsername("hans");
         changeUser.setBirthday(LocalDate.parse("1981-02-20"));
+        changeUser.setToken(this.userRepository.findByName(testName).getToken());
 
         this.userController.changeUser(id, changeUser);
 

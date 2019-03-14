@@ -135,7 +135,7 @@ public class UserService {
             }
             return targetUser;
         } else {
-            throw new NotFoundException("User with id " + id + "not found in database");
+            throw new NotFoundException("User with id " + id + " not found in database");
         }
     }
 
