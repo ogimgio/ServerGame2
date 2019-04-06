@@ -8,12 +8,14 @@ import java.util.*;
 
 import ch.uzh.ifi.seal.soprafs19.entity.User;
 import ch.uzh.ifi.seal.soprafs19.entity.game.rules.GameRuleEngine;
+import ch.uzh.ifi.seal.soprafs19.entity.game.rules.GodPowers;
 import ch.uzh.ifi.seal.soprafs19.entity.game.states.GameState;
 
 @Entity
 public class Game {
 
     List<User> listOfUser = new ArrayList<User>();
+    List<GodPowers> listAvailableGodPowers = new ArrayList<>();
     public GameRuleEngine gameruleEngine = new GameRuleEngine();
     public Board board = new Board();
     public GameState gameState = new GameState();
@@ -48,17 +50,9 @@ public class Game {
         return allowGodPowers;
     }
 
-    public void setAllowGodPowers(boolean allowGodPowers) {
-        this.allowGodPowers = allowGodPowers;
-    }
-    /*public boolean allowGodPowers(boolean answer){
-        if(answer == true){
-            return true;
-        }
-        else{
-            return false;
-        }
-    }*/
+    public void setAllowGodPowers(boolean allowGodPowers) { this.allowGodPowers = allowGodPowers; }
+
+    //add user to lobby
     public void addUser(User user){
         listOfUser.add(user);
         if (listOfUser.size() == 2){
@@ -69,10 +63,15 @@ public class Game {
         listOfUser.remove(user);
 
     }
-    public void setGodPower(String godPower1, String godPower2){}
+
+    //set godpowers
+    public void setGodPower(GodPowers godPower1, GodPowers godPower2){
+        listAvailableGodPowers.add(godPower1);
+        listAvailableGodPowers.add(godPower2);
+    }
 
     public void start(){
-        //Board.load();
+        //board.load();
     }
 
 

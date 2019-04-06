@@ -31,6 +31,12 @@ public class GameService {
         this.gameRepository = gameRepository;
     }
 
-    public Iterable<Game> getLobbies(){return this.gameRepository.findAll(); }
+    public Iterable<Game> getLobbies() {
+        if ((this.gameRepository.findAll().iterator().hasNext() == false)) {
+            throw new NotFoundException("No lobby available!");
+        } else {
+            return this.gameRepository.findAll();
+        }
+    }
 
 }
